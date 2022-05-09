@@ -205,17 +205,6 @@
        ~@(get-preamble)
        ~script)))
 
-(s/fdef compile! :args ::compile)
-(defn create-jar!
-  ""
-  [{:keys [src-dir resources aot-nses classes-dir output-jar] :as args}]
-  (when-not (s/valid? ::compile args)
-    (println "args:" args)
-    (s/explain ::compile args)
-    (assert false))
-
-  (create-jar (select-keys args [:src-dir :classes-dir :output-jar :resources :aot-nses])))
-
 (defn find-sources [cp]
   (concat
    (->> cp
@@ -228,8 +217,6 @@
         (mapcat (fn [dir]
                   (map (fn [src]
                          [dir src]) (find/find-sources-in-dir (io/file dir))))))))
-
-(def old-classpath (atom nil))
 
 (defn create-jar-json [json-str]
   (let [{:keys [src_dir resources aot_nses classes_dir output_jar classpath] :as args} (json/read-str json-str :key-fn keyword)
