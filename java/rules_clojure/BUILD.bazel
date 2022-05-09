@@ -2,35 +2,33 @@ package(default_visibility = ["//visibility:public"])
 
 java_library(
     name = "ClojureWorker-lib",
-    srcs = ["ClojureWorker.java",
-            "DynamicClassLoader.java"],
-    deps = ["@rules_clojure_maven//:org_projectodd_shimdandy_shimdandy_api",
-            "@rules_clojure_maven//:com_google_code_gson_gson",
-            ":worker_java_proto"])
+    srcs = [
+        "ClojureWorker.java",
+        "DynamicClassLoader.java",
+    ],
+    deps = [
+        ":worker_java_proto",
+        "@rules_clojure_maven//:com_google_code_gson_gson",
+        "@rules_clojure_maven//:org_projectodd_shimdandy_shimdandy_api",
+    ],
+)
 
 java_binary(
     name = "ClojureWorker",
+    jvm_flags = [
+        "-Xmx500m",
+        "-XX:MaxMetaspaceSize=500m",
+    ],
     main_class = "rules_clojure.ClojureWorker",
     runtime_deps = [":ClojureWorker-lib"],
-    jvm_flags = ["-Xmx500m", "-XX:MaxMetaspaceSize=500m"]
 )
 
 proto_library(
     name = "worker_proto",
-    srcs = ["worker_protocol.proto"]
+    srcs = ["worker_protocol.proto"],
 )
 
 java_proto_library(
     name = "worker_java_proto",
     deps = [":worker_proto"],
-)
-
-proto_library(
-    name = "clojure_compile_proto",
-    srcs = ["clojure_compile.proto"]
-)
-
-java_proto_library(
-    name = "clojure_compile_java_proto",
-    deps = [":clojure_compile_proto"],
 )

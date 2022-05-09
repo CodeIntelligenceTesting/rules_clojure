@@ -16,30 +16,6 @@
                                 (symbol name)))
                ns-clause-head-names)))
 
-(defn ns-decl?
-  "Returns true if form is a (ns ...) declaration."
-  [form]
-  (and (list? form) (= 'ns (first form))))
-
-(def clj-read-opts
-  "Map of options for tools.reader/read allowing reader conditionals
-  with the :clj feature enabled."
-  {:read-cond :allow
-   :features #{:clj}})
-
-(def cljs-read-opts
-  "Map of options for tools.reader/read allowing reader conditionals
-  with the :cljs feature enabled."
-  {:read-cond :allow
-   :features #{:cljs}})
-
-(defn read-ns-decl
-  "Same as c.t.n.s.parse/read-ns-decl, but takes the ns-decl form"
-  [ns-decl read-opts]
-  (let [form (read-string read-opts (str ns-decl))]
-    (when (ns-decl? form)
-      form)))
-
 (defn- prefix-spec?
   "Returns true if form represents a libspec prefix list like
   (prefix name1 name1) or [com.example.prefix [name1 :as name1]]"

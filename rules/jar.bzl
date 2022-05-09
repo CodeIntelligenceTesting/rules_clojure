@@ -1,4 +1,3 @@
-
 def contains(lst, item):
     for x in lst:
         if x == item:
@@ -69,19 +68,21 @@ def _target_path_by_default_prefixes(resource):
 def restore_prefix(src, stripped):
     """opposite of _target_path. Given a source and stripped file, return the prefix """
     if src.path.endswith(stripped):
-        return src.path[:len(src.path)-len(stripped)]
+        return src.path[:len(src.path) - len(stripped)]
     else:
         fail("Resource file %s is not under the specified prefix %s to strip" % (src, stripped))
 
 def argsfile_name(label):
-    return str(label).replace("@","_").replace("/","_") + "_args"
+    return str(label).replace("@", "_").replace("/", "_") + "_args"
 
 def printable_label(label):
-    return "%s.%s" % (label.package.replace("/","_").replace("@",""),
-                      label.name)
+    return "%s.%s" % (
+        label.package.replace("/", "_").replace("@", ""),
+        label.name,
+    )
 
 def clojure_jar_impl(ctx):
-
+    # assumption: this is to build executable jars, and those need at least a main
     if (len(ctx.attr.srcs) > 0 and len(ctx.attr.aot) == 0):
         fail("srcs but no AOT")
 
@@ -109,7 +110,8 @@ def clojure_jar_impl(ctx):
         compile_jar = output_jar,
         source_jar = None,
         deps = java_deps,
-        runtime_deps = java_deps)
+        runtime_deps = java_deps,
+    )
 
     default_info = DefaultInfo(
         files = depset([output_jar]),
@@ -139,7 +141,7 @@ def clojure_jar_impl(ctx):
 
     javaopts_str = " ".join(ctx.attr.javacopts)
 
-    compile_args=struct(
+    compile_args = struct(
         classes_dir = classes_dir.path,
         output_jar = output_jar.path,
         src_dir = src_dir,
@@ -153,20 +155,22 @@ def clojure_jar_impl(ctx):
     args_file = ctx.actions.declare_file(argsfile_name(ctx.label))
     ctx.actions.write(
         output = args_file,
-        content = json.encode(compile_args))
+        content = json.encode(compile_args),
+    )
 
     inputs = ctx.files.srcs + ctx.files.resources + dep_info.transitive_deps.to_list() + dep_info.transitive_runtime_deps.to_list() + native_libs + [args_file] + ctx.files.jar_runtime
 
     ctx.actions.run(
-        executable=ctx.executable.worker,
-        arguments=["--persistent_worker", "@%s" % args_file.path],
+        executable = ctx.executable.worker,
+        arguments = ["--persistent_worker", "@%s" % args_file.path],
         outputs = [output_jar, classes_dir],
         inputs = inputs,
         mnemonic = "ClojureCompile",
         progress_message = "Compiling %s" % ctx.label,
-        execution_requirements={"supports-workers":"1"})
+        execution_requirements = {"supports-workers": "1"},
+    )
 
     return [
         default_info,
-        java_info
+        java_info,
     ]

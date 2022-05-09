@@ -1,23 +1,15 @@
 (ns rules-clojure.jar
   (:require [clojure.data.json :as json]
-            [clojure.java.classpath :as cp]
             [clojure.java.io :as io]
-            [clojure.set :as set]
-            [clojure.stacktrace :as pst]
-            [clojure.string :as str]
             [clojure.spec.alpha :as s]
-            [clojure.tools.namespace.file :as file]
             [clojure.tools.namespace.find :as find]
             [clojure.tools.namespace.parse :as parse]
-            [clojure.tools.namespace.track :as track]
             [clojure.tools.namespace.dependency :as dep]
             [rules-clojure.fs :as fs])
-  (:import clojure.lang.DynamicClassLoader
-           clojure.lang.RT
-           [java.io BufferedOutputStream FileOutputStream File]
+  (:import [java.io BufferedOutputStream FileOutputStream File]
            [java.util.jar Manifest JarEntry JarFile JarOutputStream]
-           [java.nio.file Files Path Paths FileSystem FileSystems LinkOption]
-           [java.nio.file.attribute FileAttribute FileTime]
+           [java.nio.file Files Path LinkOption]
+           [java.nio.file.attribute FileTime]
            java.time.Instant))
 
 (def manifest
@@ -73,34 +65,6 @@
   {:post [(do (when-not % (println "could not find ns-decl for" ns)) true) %]}
   (get all-ns-decls ns))
 
-(defn classpath-resources [classpath]
-  {:pre [(every? fs/file? classpath)]}
-  (->> classpath
-       (mapcat (fn [^File f]
-                 (cond
-                   (.isDirectory f) (->> (fs/file->path f)
-                                         (fs/ls-r)
-                                         (map (fn [sub-path]
-                                                (-> f
-                                                    (fs/file->path)
-                                                    (fs/path-relative-to sub-path)
-                                                    str))))
-                   (re-find #".jar$" (str f)) (-> (JarFile. (str f))
-                                                  (.entries)
-                                                  (enumeration-seq)
-                                                  (->> (map (fn [^JarEntry e]
-                                                              (.getName e)))))
-                   :else (assert false (print-str "don't know how to deal with p")))))))
-
-
-(defn classpath-resource
-  "Given a seq of classpath files, resolve a resource the way `io/resource` would."
-  [classpath resource]
-  (->> (classpath-resources classpath)
-       (filter (fn [e]
-                 (= e resource)))
-       first))
-
 ;; directory, root where all src and resources will be found
 (s/def ::src-dir fs/path?)
 
@@ -120,10 +84,8 @@
 ;; Doesn't take `::srcs`, assumes they are already on the classpath
 (s/def ::compile (s/keys :req-un [::resources ::aot-nses ::classes-dir ::output-jar] :opt-un [::src-dir]))
 
-(defn create-jar [{:keys [src-dir classes-dir output-jar resources aot-nses]}]
-  (let [temp (File/createTempFile (fs/filename output-jar) "jar")
-        aot-files (->> classes-dir fs/ls-r)
-        jar-files (concat resources aot-files)]
+(defn create-jar [{:keys [src-dir classes-dir output-jar resources]}]
+  (let [temp (File/createTempFile (fs/filename output-jar) "jar")]
 
     (with-open [jar-os (-> temp FileOutputStream. BufferedOutputStream. JarOutputStream.)]
       (put-next-entry! jar-os JarFile/MANIFEST_NAME (FileTime/from (Instant/now)))
@@ -172,15 +134,12 @@
       (lazy-cat [ret] (read-all stream)))))
 
 (defn get-preamble []
-  (read-all (java.io.PushbackReader. ;; (io/reader (io/file "/Users/arohner/Programming/rules_clojure/src/rules_clojure/compile.clj"))
-                                     (io/reader (io/resource "rules_clojure/compile.clj"))
-                                     )))
+  (read-all (java.io.PushbackReader. (io/reader (io/resource "rules_clojure/compile.clj")))))
 
 (defn get-compilation-script
   "Returns a string, a script to eval in the compilation env."
   [{:keys [classpath
-           classes-dir
-           output-jar]} nses]
+           classes-dir]} nses]
   (assert (every? fs/file? classpath))
   (assert (string? classes-dir))
 
@@ -191,8 +150,7 @@
         compile-nses (set nses)
         compile-nses (filter (fn [n]
                                (contains? compile-nses n)) topo-nses) ;; sorted order
-        _ (assert (= (count nses) (count compile-nses)))
-        preamble (get-preamble)
+        _ (assert (= (count nses) (count compile-nses)) "Not all namespaces to compile are on class path.")
         script (if (seq compile-nses)
                  `(let [rets# ~(mapv (fn [n] `((ns-resolve (quote ~'rules-clojure.compile) (quote ~'non-transitive-compile)) (quote ~(deps-of n)) (quote ~n))) compile-nses)]
                     (some identity rets#))
@@ -205,34 +163,8 @@
        ~@(get-preamble)
        ~script)))
 
-(s/fdef compile! :args ::compile)
-(defn create-jar!
-  ""
-  [{:keys [src-dir resources aot-nses classes-dir output-jar] :as args}]
-  (when-not (s/valid? ::compile args)
-    (println "args:" args)
-    (s/explain ::compile args)
-    (assert false))
-
-  (create-jar (select-keys args [:src-dir :classes-dir :output-jar :resources :aot-nses])))
-
-(defn find-sources [cp]
-  (concat
-   (->> cp
-        (filter (fn [f] (cp/jar-file? (io/file f))))
-        (mapcat (fn [^File jar]
-                  (map (fn [src]
-                         [jar src]) (find/sources-in-jar (JarFile. jar))))))
-   (->> cp
-        (filter (fn [f] (.isDirectory (io/file f))))
-        (mapcat (fn [dir]
-                  (map (fn [src]
-                         [dir src]) (find/find-sources-in-dir (io/file dir))))))))
-
-(def old-classpath (atom nil))
-
 (defn create-jar-json [json-str]
-  (let [{:keys [src_dir resources aot_nses classes_dir output_jar classpath] :as args} (json/read-str json-str :key-fn keyword)
+  (let [{:keys [src_dir resources aot_nses classes_dir output_jar classpath]} (json/read-str json-str :key-fn keyword)
         _ (assert classes_dir)
         _ (when (seq resources) (assert src_dir))
         aot-nses (map symbol aot_nses)
@@ -250,7 +182,7 @@
                     {:src-dir (fs/->path src_dir)}))))))
 
 (defn get-compilation-script-json [json-str]
-  (let [{:keys [src_dir resources aot_nses classes_dir output_jar compile_classpath] :as args} (json/read-str json-str :key-fn keyword)
+  (let [{:keys [aot_nses classes_dir output_jar compile_classpath]} (json/read-str json-str :key-fn keyword)
         aot-nses (map symbol aot_nses)
         classpath-files (map io/file compile_classpath)
         output-jar (fs/->path output_jar)]

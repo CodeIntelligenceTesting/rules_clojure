@@ -9,6 +9,8 @@ java_library(
 clojure_library(
     name = "greeter",
     srcs = ["hello.clj"],
+    aot = ["rules-clojure.transitive.greeter.hello"],
     visibility = ["//visibility:public"],
     deps = [":greeter_java"],
+    resource_strip_prefix = "tests",
 )

@@ -1,5 +1,5 @@
-(ns tests.transitive.app
-  (:require [tests.transitive.greeter.hello :as hello])
+(ns rules-clojure.transitive.app
+  (:require [rules-clojure.transitive.greeter.hello :as hello])
   (:gen-class))
 
 (defn greeting [subject message]
