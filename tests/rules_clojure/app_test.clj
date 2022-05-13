@@ -1,5 +1,5 @@
-(ns tests.app-test
-    (:require [tests.app :as app])
+(ns rules-clojure.app-test
+    (:require [rules-clojure.app :as app])
     (:use clojure.test))
 
 (deftest app

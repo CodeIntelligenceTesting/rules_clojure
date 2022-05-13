@@ -1,5 +1,5 @@
-(ns tests.library-test
-  (:require [tests.library :as lib])
+(ns rules-clojure.library-test
+  (:require [rules-clojure.library :as lib])
   (:use clojure.test))
 
 (deftest library

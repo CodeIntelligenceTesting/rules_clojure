@@ -1,4 +1,4 @@
-(ns tests.library (:gen-class))
+(ns rules-clojure.library (:gen-class))
 
 (defn echo [message] (str "library " message))
 

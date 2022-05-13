@@ -1,4 +1,4 @@
-(ns tests.app-java-test
+(ns rules-clojure.app-java-test
     (:import aot.CompiledAppClass)
     (:use clojure.test))
 
