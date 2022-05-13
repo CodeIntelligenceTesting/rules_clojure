@@ -35,9 +35,12 @@ def clojure_ns_impl(ctx):
             files = depset(src_input_files),
             runfiles = runfiles,
         ),
-        CljInfo(srcs = ctx.attr.srcs,
-                aot = ctx.attr.aot,
-                transitive_aot = transitive_aot,
-                transitive_clj_srcs = transitive_clj_srcs,
-                transitive_java_deps = transitive_java_deps,
-                deps = ctx.attr.deps)]
+        CljInfo(
+            srcs = ctx.attr.srcs,
+            aot = ctx.attr.aot,
+            transitive_aot = transitive_aot,
+            transitive_clj_srcs = transitive_clj_srcs,
+            transitive_java_deps = transitive_java_deps,
+            deps = ctx.attr.deps,
+        ),
+    ]

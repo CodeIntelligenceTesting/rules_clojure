@@ -20,4 +20,5 @@ def rules_clojure_dependencies():
             name = "rules_jvm_external",
             strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
             sha256 = RULES_JVM_EXTERNAL_SHA,
-            url = "https://github.com/bazelbuild/rules_jvm_external/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG)
+            url = "https://github.com/bazelbuild/rules_jvm_external/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG,
+        )
