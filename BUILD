@@ -1,17 +1,26 @@
-load(":toolchains.bzl", "clojure_toolchain")
+# TODO (thor) no clojure_toolchain in there
+#load(":toolchains.bzl", "clojure_toolchain")
 load(":rules.bzl", "clojure_repl")
 
 package(default_visibility = ["//visibility:public"])
-exports_files(glob(["deps.edn", "src/main/resources/**/*.clj"]))
+
+exports_files(glob([
+    "deps.edn",
+    "src/main/resources/**/*.clj",
+]))
 
 toolchain_type(
     name = "toolchain_type",
-    visibility = ["//visibility:public"])
+    visibility = ["//visibility:public"],
+)
 
-clojure_toolchain(
-    name = "default_clojure_toolchain")
+# TODO (thor) clojure_toolchain not in repo?
+#clojure_toolchain(
+#    name = "default_clojure_toolchain")
+#
 
 toolchain(
     name = "rules_clojure_default_toolchain",
     toolchain = ":default_clojure_toolchain",
-    toolchain_type = ":toolchain_type")
+    toolchain_type = ":toolchain_type",
+)

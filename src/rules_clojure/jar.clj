@@ -191,7 +191,7 @@
         compile-nses (set nses)
         compile-nses (filter (fn [n]
                                (contains? compile-nses n)) topo-nses) ;; sorted order
-        _ (assert (= (count nses) (count compile-nses)))
+        _ (assert (= (count nses) (count compile-nses)) "Not all namespaces to compile are on class path.")
         preamble (get-preamble)
         script (if (seq compile-nses)
                  `(let [rets# ~(mapv (fn [n] `((ns-resolve (quote ~'rules-clojure.compile) (quote ~'non-transitive-compile)) (quote ~(deps-of n)) (quote ~n))) compile-nses)]

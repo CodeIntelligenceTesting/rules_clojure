@@ -3,24 +3,28 @@ package(default_visibility = ["//visibility:public"])
 load("@rules_java//java:defs.bzl", "java_proto_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 
-java_library(
-    name = "ClojureWorker-lib",
-    srcs = glob(["ClojureWorker.java"]),
-    deps = [":worker_protocol_protobuf_java"])
+# TODO (thor) these files seem to live under rules_clojure
+#java_library(
+#    name = "ClojureWorker-lib",
+#    srcs = glob(["ClojureWorker.java"]),
+#    deps = [":worker_protocol_protobuf_java"])
 
-java_binary(
-    name = "ClojureWorker",
-    main_class = "rules_clojure.ClojureWorker",
-    runtime_deps = [":ClojureWorker-lib"])
+# TODO (thor) these files seem to libe under rules_clojure
+#java_binary(
+#    name = "ClojureWorker",
+#    main_class = "rules_clojure.ClojureWorker",
+#    runtime_deps = [":ClojureWorker-lib"])
 
-FILES = ["worker_protocol"]
+# TODO (thor) no such file
+#FILES = ["worker_protocol"]
 
-[proto_library(
-    name = s + "_proto",
-    srcs = [s + ".proto"],
-) for s in FILES]
-
-[java_proto_library(
-    name = s + "_java_proto",
-    deps = [":" + s + "_proto"],
-) for s in FILES]
+# TODO (thor) no FILES, no using them
+#[proto_library(
+#    name = s + "_proto",
+#    srcs = [s + ".proto"],
+#) for s in FILES]
+#
+#[java_proto_library(
+#    name = s + "_java_proto",
+#    deps = [":" + s + "_proto"],
+#) for s in FILES]
