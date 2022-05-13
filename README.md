@@ -260,17 +260,6 @@ cljs_library(
 
 `clojure_gen_namespace_loader` generates a file with the specified filename and namespace. It `:requires` all namespaces found under `in_dirs`. The generated namespace defines a function `all-namespaces`. Your test runner can require that namespace.
 
-
-## Toolchains
-
-Rules require `@rules_clojure//:toolchain` type.
-
-Default is registered with `rules_clojure_toolchains` from [@rules_clojure//:repositories.bzl](repositories.bzl)
-
-Custom toolchain can be defined with `clojure_toolchain` rule from [@rules_clojure//:toolchains.bzl](toolchains.bzl)
-
-Please see [example](examples/setup/custom) of custom toolchain.
-
 # Known Issues
 
 - builds are non-reproducible for two reasons:

@@ -2,20 +2,16 @@
   "Tools for generating BUILD.bazel files for clojure deps"
   (:require [clojure.core.specs.alpha :as cs]
             [clojure.edn :as edn]
-            [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as stest]
             [clojure.set :as set]
             [clojure.tools.deps.alpha :as deps]
-            [clojure.tools.deps.alpha.util.concurrent :as concurrent]
             [rules-clojure.parse :as parse]
             [clojure.tools.namespace.find :as find]
             [rules-clojure.fs :as fs])
-  (:import java.io.File
-           [clojure.lang Keyword IPersistentVector IPersistentList IPersistentMap Var]
-           [java.nio.file Files Path Paths FileSystem FileSystems]
-           java.nio.file.attribute.FileAttribute
+  (:import [clojure.lang Keyword IPersistentVector IPersistentList IPersistentMap Var]
+           [java.nio.file Path]
            [java.util.jar JarFile])
   (:gen-class))
 
@@ -178,7 +174,7 @@
   {:post [(s/valid? ::jar->lib %)]}
   (->> basis
        :classpath
-       (map (fn [[path {:keys [path-key lib-name]}]]
+       (map (fn [[path {:keys [lib-name]}]]
               (when lib-name
                 [(fs/->path path) lib-name])))
        (filter identity)
@@ -705,7 +701,7 @@
 
 (defn gen-deps-build
   "generates the BUILD file for @deps//: with a single target containing all deps.edn-resolved dependencies"
-  [{:keys [repository-dir deps-build-dir dep-ns->label jar->lib lib->jar lib->deps deps-repo-tag deps-bazel] :as args}]
+  [{:keys [deps-build-dir jar->lib lib->deps deps-repo-tag deps-bazel] :as args}]
   (println "writing to" (-> (fs/->path deps-build-dir "BUILD.bazel") fs/path->file))
   (spit (-> (fs/->path deps-build-dir "BUILD.bazel") fs/path->file)
         (str/join "\n\n" (concat
@@ -715,7 +711,6 @@
                                (sort-by (fn [[k v]] (library->label v)))
                                (mapcat (fn [[jarpath lib]]
                                          (let [label (library->label lib)
-                                               preaot (str label ".preaot")
                                                deps (->> (get lib->deps lib)
                                                          (mapv (fn [lib]
                                                                  (str ":" (library->label lib)))))
@@ -795,7 +790,6 @@
                            :deps-edn-path deps-edn-path})
         jar->lib (->jar->lib basis)
         lib->jar (set/map-invert jar->lib)
-        class->jar (->class->jar basis)
         lib->deps (->lib->deps basis)
         dep-ns->label (->dep-ns->label {:basis basis
                                         :deps-bazel deps-bazel
@@ -823,9 +817,7 @@
                            :repository-dir repository-dir
                            :deps-edn-path deps-edn-path})
         jar->lib (->jar->lib basis)
-        lib->jar (set/map-invert jar->lib)
         class->jar (->class->jar basis)
-        lib->deps (->lib->deps basis)
         args {:aliases aliases
               :deps-bazel deps-bazel
               :deps-edn-path deps-edn-path

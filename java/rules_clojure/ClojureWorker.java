@@ -117,17 +117,11 @@ import org.projectodd.shimdandy.ClojureRuntimeShim;
 // jars, and a second to do compilation.
 
 class ClojureCompileRequest {
-    String[] aot_nses;
-    String classes_dir;
     String[] compile_classpath;
     String[] jar_classpath;
-    String output_jar;
-    String src_dir;
-    String[] srcs;
 }
 
 class ClojureWorker  {
-
     public static DynamicClassLoader jar_classloader = null;
     public static ClojureRuntimeShim jar_runtime = null;
 
@@ -172,12 +166,9 @@ class ClojureWorker  {
 		    break;
 		}
 
-		int code = 1;
-
 		try {
 		    System.setErr(out);
 		    processRequest(request);
-		    code = 0;
 		} catch (Throwable e) {
 		    e.printStackTrace(real_stderr);
 		    throw e;
@@ -192,7 +183,7 @@ class ClojureWorker  {
 		out.flush();
 
 		WorkResponse.newBuilder()
-		    .setExitCode(code)
+		    .setExitCode(0)
 		    .setOutput(outStream.toString())
 		    .build()
 		    .writeDelimitedTo(real_stdout);
