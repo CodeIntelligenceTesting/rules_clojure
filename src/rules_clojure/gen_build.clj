@@ -804,7 +804,19 @@
                      :lib->jar lib->jar
                      :lib->deps lib->deps})))
 
-(defn srcs [{:keys [repository-dir deps-edn-path deps-repo-tag aliases aot-default]
+(comment (deps {:deps-repo-tag "@deps"
+                :deps-edn-path "/home/simon/.cache/bazel/_bazel_simon/34d7441ee02bad3141a22236794201d3/external/code_intelligence/deps.edn"
+                :repository-dir "/home/simon/.cache/bazel/_bazel_simon/34d7441ee02bad3141a22236794201d3/external/deps/repository"
+                :deps-build-dir "/home/simon/.cache/bazel/_bazel_simon/34d7441ee02bad3141a22236794201d3/external/deps",
+                :workspace-root "/home/simon/go/src/gitlab.com/code-intelligence/core"})
+         (deps {:deps-repo-tag "@deps"
+                :deps-edn-path "/home/simon/.cache/bazel/_bazel_simon/34d7441ee02bad3141a22236794201d3/external/code_intelligence/deps.edn"
+                :repository-dir "repository/"
+                :deps-build-dir ".",
+                :workspace-root "/home/simon/go/src/gitlab.com/code-intelligence/core"}))
+
+
+(defn srcs [{:keys [repository-dir deps-edn-path deps-repo-tag aliases]
              :or {deps-repo-tag "@deps"}}]
   {:pre [(re-find #"^@" deps-repo-tag) deps-edn-path repository-dir]}
   (let [deps-edn-path (-> deps-edn-path fs/->path fs/absolute)
@@ -883,6 +895,7 @@
 (defn -main [& args]
   ;; binding [*print-length* 10
   ;;          *print-level* 3]
+  (println "inside main with args" args)
   (let [cmd (first args)
         cmd (keyword cmd)
         opts (apply hash-map (rest args))
@@ -900,4 +913,5 @@
             :deps deps
             :srcs srcs
             :ns-loader gen-namespace-loader)]
+    (println "running cmd " cmd " with options " opts)
     (f opts)))

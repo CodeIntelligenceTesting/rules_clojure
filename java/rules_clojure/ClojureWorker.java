@@ -225,6 +225,7 @@ class ClojureWorker  {
 
     public static void processRequest(WorkRequest work_request) throws Exception
     {
+        System.err.println("Work request: " + work_request);
 	Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_DASHES).create();
 	ClojureCompileRequest compile_request = gson.fromJson(work_request.getArguments(0),ClojureCompileRequest.class);
 
