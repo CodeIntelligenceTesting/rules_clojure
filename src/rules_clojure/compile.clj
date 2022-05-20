@@ -1,33 +1,5 @@
 (ns rules-clojure.compile
-  (:require [clojure.string]
-            [clojure.java.io :as io]))
-
-(defn deftype? [ns v]
-  (and (class? v)
-       (-> v
-           (.getName)
-           (clojure.string/starts-with? (munge (name ns))))
-       (= (count (clojure.string/split (.getName v) #"\."))
-          (inc (count (clojure.string/split (name ns) #"\."))))))
-
-(defn protocol? [val]
-  (and (map? val)
-       (class? (:on-interface val))
-       (map? (:sigs val))
-       (map? (:method-map val))))
-
-(defn contains-protocols? [ns]
-         (->> ns
-              ns-interns
-              vals
-              (some protocol?)))
-
-(defn contains-deftypes? [ns]
-  (->> ns
-       ns-map
-       vals
-       (some (fn [v]
-               (deftype? ns v)))))
+  (:require [clojure.string]))
 
 (defn compile-path-files []
   (-> *compile-path*
@@ -77,18 +49,12 @@
   (when (seq dep-nses)
     (apply require dep-nses))
 
-  (let [aot-class-resource (clojure.java.io/resource (aot-class-name ns))
-        loaded (loaded-libs)]
+  (clojure.java.io/resource (aot-class-name ns))
+  (let [loaded (loaded-libs)]
     (try
-      (if (not (contains? loaded ns))
-        (do
-          (unconditional-compile ns)
-          (assert (seq (compile-path-files)) (print-str "no classfiles generated for" ns *compile-path* "loaded:" loaded))
-          (when (or (contains-protocols? ns)
-                    (contains-deftypes? ns))
-            (str :rules-clojure.compile/reload)))
-        (do
-          (str :rules-clojure.compile/restart)))
-
+      (when (contains? loaded ns)
+        (throw (ex-info (print-str "ns " ns " is already loaded") {:loaded loaded})))
+      (unconditional-compile ns)
+      (assert (seq (compile-path-files)) (print-str "no classfiles generated for" ns *compile-path* "loaded:" loaded))
       (catch Throwable t
         (throw (ex-info (print-str "while compiling" ns) {:loaded loaded} t))))))

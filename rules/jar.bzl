@@ -122,7 +122,8 @@ def clojure_jar_impl(ctx):
 
     compile_classpath = dep_info.transitive_runtime_deps.to_list() + ctx.files.compiledeps + dep_info.transitive_source_jars.to_list()
     compile_classpath = [f.path for f in compile_classpath]
-    compile_classpath = compile_classpath + [p for p in [src_dir] if p]
+    if src_dir:
+        compile_classpath += [src_dir]
 
     javaopts_str = " ".join(ctx.attr.javacopts)
 

@@ -1,36 +1,21 @@
 package rules_clojure;
 
-import com.google.devtools.build.lib.worker.WorkerProtocol.Input;
 import com.google.devtools.build.lib.worker.WorkerProtocol.WorkRequest;
 import com.google.devtools.build.lib.worker.WorkerProtocol.WorkResponse;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
+import java.net.URLClassLoader;
+import java.util.Vector;
 import org.projectodd.shimdandy.ClojureRuntimeShim;
 
 // Clojure is a compiled language. When loading source files or
@@ -122,11 +107,6 @@ class ClojureCompileRequest {
 }
 
 class ClojureWorker {
-  public static DynamicClassLoader jar_classloader = null;
-  public static ClojureRuntimeShim jar_runtime = null;
-
-  public static DynamicClassLoader compile_classloader = null;
-  public static ClojureRuntimeShim compile_runtime = null;
 
   public static void main(String[] args) throws Exception {
     if (args.length > 0 && args[0].equals("--persistent_worker")) {
@@ -192,36 +172,32 @@ class ClojureWorker {
     }
   }
 
-  public static void ensureJarRuntime(WorkRequest work_request,
-                                      ClojureCompileRequest compile_request)
+  public static ClojureRuntimeShim jar_runtime = null;
+
+  public static void ensureJarRuntime(ClojureCompileRequest compile_request)
       throws Exception {
-    if (Objects.isNull(jar_classloader)) {
-      jar_classloader =
-          new DynamicClassLoader(ClojureWorker.class.getClassLoader());
-
-      for (String path : compile_request.jar_classpath) {
-        jar_classloader.addURL(new File(path).toURI().toURL());
-      }
-
-      jar_runtime =
-          ClojureRuntimeShim.newRuntime(jar_classloader, "jar-worker");
+    if (jar_runtime != null) {
+      return;
     }
+    Vector<URL> urls = new Vector<>();
+    for (String path : compile_request.jar_classpath) {
+      urls.add(new File(path).toURI().toURL());
+    }
+    URLClassLoader class_loader = new URLClassLoader(
+        urls.toArray(new URL[0]), ClojureWorker.class.getClassLoader());
+    jar_runtime = ClojureRuntimeShim.newRuntime(class_loader, "jar-worker");
+    jar_runtime.require("rules-clojure.jar");
   }
 
-  public static void ensureCompileRuntime(WorkRequest work_request,
-                                          ClojureCompileRequest compile_request)
-      throws Exception {
-    if (Objects.isNull(compile_classloader)) {
-      compile_classloader =
-          new DynamicClassLoader(ClassLoader.getSystemClassLoader());
-    }
-
+  public static ClojureRuntimeShim
+  getCompileRuntime(ClojureCompileRequest compile_request) throws Exception {
+    Vector<URL> urls = new Vector<>();
     for (String path : compile_request.compile_classpath) {
-      compile_classloader.addURL(new File(path).toURI().toURL());
+      urls.add(new File(path).toURI().toURL());
     }
-
-    compile_runtime =
-        ClojureRuntimeShim.newRuntime(compile_classloader, "compile-worker");
+    URLClassLoader class_loader = new URLClassLoader(
+        urls.toArray(new URL[0]), ClassLoader.getSystemClassLoader());
+    return ClojureRuntimeShim.newRuntime(class_loader, "compile-worker");
   }
 
   public static void processRequest(WorkRequest work_request) throws Exception {
@@ -232,10 +208,8 @@ class ClojureWorker {
     ClojureCompileRequest compile_request = gson.fromJson(
         work_request.getArguments(0), ClojureCompileRequest.class);
 
-    ensureJarRuntime(work_request, compile_request);
-    ensureCompileRuntime(work_request, compile_request);
-
-    jar_runtime.require("rules-clojure.jar");
+    ensureJarRuntime(compile_request);
+    ClojureRuntimeShim compile_runtime = getCompileRuntime(compile_request);
 
     String json = work_request.getArguments(0);
     Object compile_script;
@@ -247,40 +221,19 @@ class ClojureWorker {
       throw t;
     }
 
-    compile_runtime.require("clojure.core");
     Object read_script =
         compile_runtime.invoke("clojure.core/read-string", compile_script);
 
     try {
-      Object compile_ret =
-          compile_runtime.invoke("clojure.core/eval", read_script);
-      if (Objects.equals(compile_ret, ":rules-clojure.compile/restart")) {
-        compile_runtime.close();
-        compile_classloader = null;
-        ensureCompileRuntime(work_request, compile_request);
-        read_script =
-            compile_runtime.invoke("clojure.core/read-string", compile_script);
-        compile_ret = compile_runtime.invoke("clojure.core/eval", read_script);
-
-        if (Objects.equals(compile_ret, ":rules-clojure.compile/restart")) {
-          throw new Exception("restarted twice");
-        }
-      }
-
-      String jar_ret = (String)jar_runtime.invoke(
-          "rules-clojure.jar/create-jar-json", work_request.getArguments(0));
-
-      if (Objects.equals(compile_ret, ":rules-clojure.compile/reload")) {
-        compile_runtime.close();
-        compile_classloader = null;
-      }
-    }
-
-    catch (Throwable t) {
+      compile_runtime.invoke("clojure.core/eval", read_script);
+      jar_runtime.invoke("rules-clojure.jar/create-jar-json",
+                         work_request.getArguments(0));
+    } catch (Throwable t) {
       System.err.println("req:" + json);
       System.err.println("script:" + read_script.toString());
       throw t;
     }
+    compile_runtime.close();
   }
 
   public static void ephemeralWorkerMain(String[] args) {

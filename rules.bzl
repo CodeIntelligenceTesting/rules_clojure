@@ -24,6 +24,7 @@ clojure_library = rule(
             Label("@rules_clojure//src/rules_clojure:jar-lib"),
         ], cfg = "host"),
         "worker_runtime": attr.label_list(default = [
+            Label("//src/rules_clojure:jar-lib-bootstrap"),
             Label("@rules_clojure_maven//:org_projectodd_shimdandy_shimdandy_impl"),
             #TODO toolchain here
             Label("@rules_clojure_maven//:org_clojure_clojure"),
