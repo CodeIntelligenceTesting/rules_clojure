@@ -89,18 +89,13 @@ def clojure_jar_impl(ctx):
     output_jar = ctx.actions.declare_file("%s.jar" % ctx.label.name)
     classes_dir = ctx.actions.declare_directory("%s.classes" % (printable_label(ctx.label)))
 
-    library_path = []
-
-    java_deps = []
-
     runfiles = ctx.runfiles(files = ctx.files.data)
 
     all_targets = ctx.attr.srcs + ctx.attr.deps + ctx.attr.runtime_deps + ctx.attr.data + ctx.attr.compiledeps + ctx.attr.worker_runtime
     for dep in all_targets:
         runfiles = runfiles.merge(dep[DefaultInfo].default_runfiles)
-        if JavaInfo in dep:
-            java_deps.append(dep[JavaInfo])
 
+    java_deps = [dep[JavaInfo] for dep in all_targets if JavaInfo in dep]
     dep_info = java_common.merge(java_deps)
 
     jar_info = java_common.merge([d[JavaInfo] for d in ctx.attr.jar_runtime if JavaInfo in d])
@@ -118,8 +113,6 @@ def clojure_jar_impl(ctx):
         runfiles = runfiles,
     )
 
-    aot_nses = list(ctx.attr.aot)
-
     input_files = ctx.files.srcs + ctx.files.resources
 
     if len(input_files):
@@ -127,17 +120,9 @@ def clojure_jar_impl(ctx):
     else:
         src_dir = None
 
-    compile_classpath = dep_info.transitive_runtime_deps.to_list() + ctx.files.compiledeps + [classes_dir]
+    compile_classpath = dep_info.transitive_runtime_deps.to_list() + ctx.files.compiledeps + dep_info.transitive_source_jars.to_list()
     compile_classpath = [f.path for f in compile_classpath]
     compile_classpath = compile_classpath + [p for p in [src_dir] if p]
-
-    native_libs = []
-    for f in runfiles.files.to_list():
-        ## Bazel on mac sticks weird looking directories in runfiles, like _solib_darwin/_U_S_Snative_C_Ulibsodium___Unative_Slibsodium_Slib. filter them out
-        if (f.path.endswith(".dylib") or f.path.endswith(".so")) and (f.path.rfind("solib_darwin") == -1):
-            native_libs.append(f)
-
-    aot_nses = distinct(aot_nses)
 
     javaopts_str = " ".join(ctx.attr.javacopts)
 
@@ -147,7 +132,7 @@ def clojure_jar_impl(ctx):
         src_dir = src_dir,
         srcs = [_target_path(s, ctx.attr.resource_strip_prefix) for s in ctx.files.srcs],
         resources = [_target_path(s, ctx.attr.resource_strip_prefix) for s in ctx.files.resources],
-        aot_nses = aot_nses,
+        aot_nses = distinct(list(ctx.attr.aot)),
         compile_classpath = compile_classpath,
         jar_classpath = [f.path for f in jar_info.transitive_runtime_deps.to_list()],
     )
@@ -158,6 +143,8 @@ def clojure_jar_impl(ctx):
         content = json.encode(compile_args),
     )
 
+    ## Bazel on mac sticks weird looking directories in runfiles, like _solib_darwin/_U_S_Snative_C_Ulibsodium___Unative_Slibsodium_Slib. filter them out
+    native_libs = [f for f in runfiles.files.to_list() if (f.path.endswith(".dylib") or f.path.endswith(".so")) and (f.path.rfind("solib_darwin") == -1)]
     inputs = ctx.files.srcs + ctx.files.resources + dep_info.transitive_deps.to_list() + dep_info.transitive_runtime_deps.to_list() + native_libs + [args_file] + ctx.files.jar_runtime
 
     ctx.actions.run(
