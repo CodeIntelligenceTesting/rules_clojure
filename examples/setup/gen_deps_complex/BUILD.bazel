@@ -1,0 +1,7 @@
+load("@rules_clojure//rules:tools_deps.bzl", "clojure_gen_srcs")
+
+exports_files(["deps.edn"])
+
+clojure_gen_srcs(
+    name = "gen_srcs",
+)

@@ -1,4 +1,4 @@
-workspace(name = "default")
+workspace(name = "gen_deps")
 
 local_repository(
     name = "rules_clojure",
@@ -12,3 +12,10 @@ rules_clojure_dependencies()
 load("@rules_clojure//:toolchains.bzl", "rules_clojure_default_toolchain")
 
 rules_clojure_default_toolchain()
+
+load("@rules_clojure//rules:tools_deps.bzl", "clojure_gen_srcs", "clojure_tools_deps")
+
+clojure_tools_deps(
+    name = "deps",
+    deps_edn = "@gen_deps//:deps.edn",
+)
