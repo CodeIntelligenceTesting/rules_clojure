@@ -3,15 +3,15 @@ load("@rules_java//java:defs.bzl", "java_binary")
 
 clojure_library(
     name = "unconditionally-passing-test-lib",
-    resources = ["unconditionally_passing_test.clj"],
     resource_strip_prefix = "tests",
+    resources = ["unconditionally_passing_test.clj"],
 )
 
 clojure_test(
     name = "unconditionally-passing-test",
     size = "small",
-    deps = [":unconditionally-passing-test-lib"],
     test_ns = "rules-clojure.unconditionally-passing-test",
+    deps = [":unconditionally-passing-test-lib"],
 )
 
 sh_test(
@@ -28,8 +28,8 @@ sh_test(
 
 clojure_library(
     name = "unconditionally-failing-test-lib",
-    resources = ["unconditionally_failing_test.clj"],
     resource_strip_prefix = "tests",
+    resources = ["unconditionally_failing_test.clj"],
 )
 
 clojure_test(
@@ -37,7 +37,7 @@ clojure_test(
     size = "small",
     tags = ["manual"],
     test_ns = "rules-clojure.unconditionally-failing-test",
-    deps = [":unconditionally-failing-test-lib"]
+    deps = [":unconditionally-failing-test-lib"],
 )
 
 sh_test(
@@ -98,8 +98,8 @@ clojure_library(
 
 clojure_library(
     name = "library-test-lib",
-    resources = ["library_test.clj"],
     resource_strip_prefix = "tests",
+    resources = ["library_test.clj"],
 )
 
 clojure_test(
@@ -109,8 +109,8 @@ clojure_test(
     test_ns = "rules-clojure.library-test",
     deps = [
         ":library",
-        ":library-test-lib"
-        ],
+        ":library-test-lib",
+    ],
 )
 
 clojure_binary(
@@ -153,23 +153,25 @@ clojure_library(
     name = "app-transitive",
     srcs = ["app.clj"],
     aot = ["rules-clojure.app"],
-    deps = [":library"],
     resource_strip_prefix = "tests",
+    deps = [":library"],
 )
 
 clojure_library(
     name = "app-transitive-test-lib",
+    resource_strip_prefix = "tests",
     resources = ["app_test.clj"],
     deps = [":library"],
-    resource_strip_prefix = "tests",
 )
 
 clojure_test(
     name = "app-transitive-test",
     size = "small",
-    deps = [":app-transitive",
-            ":app-transitive-test-lib"],
     test_ns = "rules-clojure.app-test",
+    deps = [
+        ":app-transitive",
+        ":app-transitive-test-lib",
+    ],
 )
 
 #clojure_repl(
@@ -217,26 +219,26 @@ clojure_library(
     aot = [
         "rules-clojure.app",
         "rules-clojure.library",
-        ],
+    ],
     resource_strip_prefix = "tests",
 )
 
 clojure_library(
     name = "app-bundled-test-lib",
+    resource_strip_prefix = "tests",
     resources = [
         "app_test.clj",
     ],
-    resource_strip_prefix = "tests",
 )
 
 clojure_test(
     name = "app-bundled-test",
     size = "small",
+    test_ns = "rules-clojure.app-test",
     deps = [
         ":app-bundled",
         ":app-bundled-test-lib",
-        ],
-    test_ns = "rules-clojure.app-test",
+    ],
 )
 
 #clojure_repl(
@@ -282,8 +284,8 @@ sh_test(
 
 clojure_library(
     name = "library-aot",
-    aot = ["rules-clojure.library"],
     srcs = ["library.clj"],
+    aot = ["rules-clojure.library"],
     resource_strip_prefix = "tests",
 )
 

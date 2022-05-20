@@ -10,7 +10,7 @@ clojure_library(
     name = "greeter",
     srcs = ["hello.clj"],
     aot = ["rules-clojure.transitive.greeter.hello"],
+    resource_strip_prefix = "tests",
     visibility = ["//visibility:public"],
     deps = [":greeter_java"],
-    resource_strip_prefix = "tests",
 )
