@@ -27,8 +27,7 @@
                    (.setLastModifiedTime last-modified-time))))
 
 (defn create-jar [{:keys [src-dir classes-dir output-jar resources]}]
-  (let [temp (File/createTempFile (fs/filename output-jar) "jar")]
-
+  (let [temp (File/createTempFile (fs/filename output-jar) "jar" (io/file "."))]
     (with-open [jar-os (-> temp FileOutputStream. BufferedOutputStream. JarOutputStream.)]
       (put-next-entry! jar-os JarFile/MANIFEST_NAME (FileTime/from (Instant/now)))
       (.write ^Manifest manifest jar-os)
