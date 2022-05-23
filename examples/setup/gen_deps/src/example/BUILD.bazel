@@ -8,7 +8,6 @@ clojure_library(
     srcs = ["name_converter.clj"],
     aot = ["example.name-converter"],
     resource_strip_prefix = "src",
-    resources = ["name_converter.clj"],
     deps = [
         "@deps//:ns_camel_snake_kebab_camel_snake_kebab_camel_snake_kebab_core",
         "@deps//:org_clojure_clojure",

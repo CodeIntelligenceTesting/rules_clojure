@@ -545,11 +545,11 @@
           (emit-bazel (list 'clojure_library (kwargs (-> (merge-with into
                                                                      {:name ns-label
                                                                       :deps [(str deps-repo-tag "//:org_clojure_clojure")]
-                                                                      :resources (mapv fs/filename paths)
                                                                       :resource_strip_prefix (strip-path (select-keys args [:basis :deps-edn-dir]) path)}
-                                                                     (when (seq aot)
+                                                                     (if (seq aot)
                                                                        {:srcs (mapv fs/filename paths)
-                                                                        :aot aot})
+                                                                        :aot aot}
+                                                                       {:resources (mapv fs/filename paths)})
                                                                      deps
                                                                      clojure-library-args
                                                                      ns-library-meta)
