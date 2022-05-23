@@ -13,7 +13,7 @@ clojure_library = rule(
         "resource_strip_prefix": attr.string(default = ""),
         "compiledeps": attr.label_list(default = []),
         "javacopts": attr.string_list(default = [], allow_empty = True, doc = "Optional javac compiler options"),
-        "worker": attr.label(default = Label("@rules_clojure//java/rules_clojure:ClojureWorker"), executable = True, cfg = "host"),
+        "worker": attr.label(default = Label("@rules_clojure//java/rules_clojure:ClojureWorker"), executable = True, cfg = "exec"),
         ## Private, but we need to override this during
         ## bootstrap. shimdandy-impl and anything that would pull in
         ## Clojure are not allowed to be on the startup classpath of
@@ -22,7 +22,7 @@ clojure_library = rule(
         "jar_runtime": attr.label_list(default = [
             Label("@rules_clojure_maven//:org_projectodd_shimdandy_shimdandy_impl"),
             Label("@rules_clojure//src/rules_clojure:jar-lib"),
-        ], cfg = "host"),
+        ], cfg = "exec"),
         "worker_runtime": attr.label_list(default = [
             Label("//src/rules_clojure:jar-lib-bootstrap"),
             Label("@rules_clojure_maven//:org_projectodd_shimdandy_shimdandy_impl"),
@@ -30,7 +30,7 @@ clojure_library = rule(
             Label("@rules_clojure_maven//:org_clojure_clojure"),
             Label("@rules_clojure_maven//:org_clojure_spec_alpha"),
             Label("@rules_clojure_maven//:org_clojure_core_specs_alpha"),
-        ], cfg = "host"),
+        ], cfg = "exec"),
     },
     provides = [JavaInfo],
     implementation = _clojure_jar_impl,
