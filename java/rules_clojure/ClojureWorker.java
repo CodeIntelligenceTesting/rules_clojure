@@ -205,35 +205,22 @@ class ClojureWorker {
         new GsonBuilder()
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_DASHES)
             .create();
-    ClojureCompileRequest compile_request = gson.fromJson(
-        work_request.getArguments(0), ClojureCompileRequest.class);
-
-    ensureJarRuntime(compile_request);
-    ClojureRuntimeShim compile_runtime = getCompileRuntime(compile_request);
-
     String json = work_request.getArguments(0);
-    Object compile_script;
-    try {
-      compile_script = jar_runtime.invoke(
-          "rules-clojure.jar/get-compilation-script-json", json);
-    } catch (Throwable t) {
-      System.err.println("during `get-compilation-script`:" + json);
-      throw t;
-    }
+    ClojureCompileRequest compile_request =
+        gson.fromJson(json, ClojureCompileRequest.class);
 
-    Object read_script =
-        compile_runtime.invoke("clojure.core/read-string", compile_script);
+    ClojureRuntimeShim compile_runtime = getCompileRuntime(compile_request);
+    compile_runtime.invoke("rules-clojure.compile/compile-from-json", json);
+    compile_runtime.close();
 
     try {
-      compile_runtime.invoke("clojure.core/eval", read_script);
+      ensureJarRuntime(compile_request);
       jar_runtime.invoke("rules-clojure.jar/create-jar-json",
                          work_request.getArguments(0));
     } catch (Throwable t) {
       System.err.println("req:" + json);
-      System.err.println("script:" + read_script.toString());
       throw t;
     }
-    compile_runtime.close();
   }
 
   public static void ephemeralWorkerMain(String[] args) {
