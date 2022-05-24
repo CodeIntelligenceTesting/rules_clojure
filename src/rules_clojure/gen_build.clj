@@ -592,6 +592,7 @@
                      (filter (fn [p]
                                (some clj*-path? (seq (fs/ls-r p))))))
         rules (->> paths
+                   sort
                    (group-by fs/basename)
                    (mapcat (fn [[_base paths]]
                              (ns-rules args paths)))
