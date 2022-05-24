@@ -1,0 +1,84 @@
+load("//:rules.bzl", "clojure_binary", "clojure_library", "clojure_repl", "clojure_test")
+load("@rules_java//java:defs.bzl", "java_binary")
+
+## Test different combinations of compiling protocols and their implementations
+
+# AOT both in one target (both .clj file are available on the compiler classpath)
+clojure_library(
+    name = "single-target",
+    srcs = [
+        "foo.clj",
+        "foo_impl.clj",
+    ],
+    aot = [
+        "rules-clojure.protocol.foo",
+        "rules-clojure.protocol.foo-impl",
+    ],
+    resource_strip_prefix = "tests",
+)
+
+clojure_test(
+    name = "single-target-test",
+    size = "small",
+    test_ns = "rules-clojure.protocol.foo-impl",
+    deps = [
+        ":single-target",
+    ],
+)
+
+# ... exactly the same but with reversed AOT order.
+clojure_library(
+    name = "single-target-reversed-aot",
+    srcs = [
+        "foo.clj",
+        "foo_impl.clj",
+    ],
+    aot = [
+        "rules-clojure.protocol.foo-impl",
+        "rules-clojure.protocol.foo",
+    ],
+    resource_strip_prefix = "tests",
+)
+
+clojure_test(
+    name = "single-target-reversed-aot-test",
+    size = "small",
+    test_ns = "rules-clojure.protocol.foo-impl",
+    deps = [
+        ":single-target-reversed-aot",
+    ],
+)
+
+# Test with fine grained bazel targets. One for the protocol and one for the implementation.
+# The protocol clj file is not available on the class path during compilation of the implementation.
+clojure_library(
+    name = "foo",
+    srcs = [
+        "foo.clj",
+    ],
+    aot = [
+        "rules-clojure.protocol.foo",
+    ],
+    resource_strip_prefix = "tests",
+)
+
+clojure_library(
+    name = "foo-impl",
+    srcs = [
+        "foo_impl.clj",
+    ],
+    aot = [
+        "rules-clojure.protocol.foo-impl",
+    ],
+    resource_strip_prefix = "tests",
+    deps = [":foo"],
+)
+
+clojure_test(
+    name = "foo-impl-test",
+    size = "small",
+    test_ns = "rules-clojure.protocol.foo-impl",
+    deps = [
+        ":foo-impl",
+    ],
+)
