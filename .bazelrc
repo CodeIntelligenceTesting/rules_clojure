@@ -1,0 +1,2 @@
+# Ensure that persistent workers execute actions in a sandbox.
+build --worker_sandboxing
