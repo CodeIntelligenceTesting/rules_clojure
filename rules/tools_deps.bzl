@@ -1,68 +1,5 @@
 load("//:rules.bzl", "clojure_binary", "clojure_library")
 
-CLJ_VERSIONS_MAC = {
-    "1.10.1.763": ("https://download.clojure.org/install/clojure-tools-1.10.1.763.tar.gz", "2a3ec8a6c3639035c2bba10945ae9007ab0dc9136766b95d2161f354e62a4d10"),
-}
-
-CLJ_VERSIONS_LINUX = {
-    "1.10.1.763": ("https://download.clojure.org/install/linux-install-1.10.1.763.sh", "91421551872d421915c4a598741aefcc6749d3f4aafca9c08f271958e5456e2c"),
-    "1.10.2.774": ("https://download.clojure.org/install/linux-install-1.10.2.774.sh", "6d39603e84ad2622e5ae601436f02a1ee4a57e4e35dc49098b01a7d142a13d4a"),
-}
-
-clj_install_prefix = "tools.deps"
-clj_path = clj_install_prefix + "/bin/clojure"
-
-def _install_clj_mac(repository_ctx):
-    clj_version = repository_ctx.attr.clj_version
-
-    url, sha256 = CLJ_VERSIONS_MAC[clj_version]
-
-    repository_ctx.download_and_extract(
-        auth = {},
-        url = url,
-        stripPrefix = "clojure-tools",
-        output = "tools.deps",
-        sha256 = sha256,
-    )
-
-    repository_ctx.execute(
-        ["mkdir", repository_ctx.path(clj_install_prefix)],
-        quiet = False,
-    )
-    ret = repository_ctx.execute(
-        ["./install.sh", repository_ctx.path(clj_install_prefix)],
-        # bazel strips the environment, but the install assumes this is defined
-        environment = {"HOMEBREW_RUBY_PATH": "/usr/bin/ruby"},
-        working_directory = "tools.deps/",
-        quiet = False,
-    )
-
-def _install_clj_linux(repository_ctx):
-    clj_version = repository_ctx.attr.clj_version
-
-    url, sha256 = CLJ_VERSIONS_LINUX[clj_version]
-
-    repository_ctx.download(
-        auth = {},
-        url = url,
-        output = "install.sh",
-        executable = True,
-        sha256 = sha256,
-    )
-
-    repository_ctx.execute(
-        ["./install.sh", "--prefix", repository_ctx.path(clj_install_prefix)],
-        quiet = False,
-    )
-
-def _install_tools_deps(repository_ctx):
-    fns = {
-        "linux": _install_clj_linux,
-        "mac os x": _install_clj_mac,
-    }
-    f = fns[repository_ctx.os.name]
-    f(repository_ctx)
-
 def _add_deps_edn(repository_ctx):
     # repository_ctx.delete(repository_ctx.path("deps.edn"))
     repository_ctx.symlink(
@@ -105,14 +42,18 @@ def _symlink_repository(repository_ctx):
     repository_ctx.symlink(repository_ctx.os.environ["HOME"] + "/.m2/repository", repository_ctx.path("repository"))
 
 def _run_gen_build(repository_ctx):
+    maven_deps_path = repository_ctx.path(Label("@rules_clojure_maven//:pin.sh")).dirname
+
+    # TODO: find a better way to collect the transitive dependencies
+    find_jars = repository_ctx.execute(["find", maven_deps_path, "-name", "*.jar"])
+    cp = ":".join(find_jars.stdout.split("\n") +
+                  [str(repository_ctx.path("../rules_clojure/src"))])
     args = [
-        repository_ctx.path("tools.deps/bin/clojure"),
-        "-Srepro",
-        "-Sdeps",
-        """{:paths ["%s"]
-            :deps {org.clojure/tools.namespace {:mvn/version "1.1.0"}
-            org.clojure/tools.deps.alpha {:mvn/version "0.9.857"}}}""" % repository_ctx.path("../rules_clojure/src"),
-        "-J-Dclojure.main.report=stderr",
+        "java",
+        "-Dclojure.main.report=stderr",
+        "-classpath",
+        cp,
+        "clojure.main",
         "-m",
         "rules-clojure.gen-build",
         "deps",
@@ -134,7 +75,6 @@ def _run_gen_build(repository_ctx):
         fail("gen build failed:", ret.return_code, ret.stdout, ret.stderr)
 
 def _tools_deps_impl(repository_ctx):
-    _install_tools_deps(repository_ctx)
     _add_deps_edn(repository_ctx)
     _symlink_repository(repository_ctx)
     _install_scripts(repository_ctx)
@@ -142,14 +82,16 @@ def _tools_deps_impl(repository_ctx):
     return None
 
 clojure_tools_deps = repository_rule(
-    _tools_deps_impl,
+    implementation = _tools_deps_impl,
     local = True,
     attrs = {
         "deps_edn": attr.label(allow_single_file = True),
         "aliases": attr.string_list(default = [], doc = "extra aliases in deps.edn to merge in while resolving deps"),
         "clj_version": attr.string(default = "1.10.1.763"),
-        "_rules_clj_deps": attr.label(default = "@rules_clojure//:deps.edn"),
-        "_rules_clj_src": attr.label(default = "@rules_clojure//:src"),
+        "_rules_clj_src": attr.label_list(default = [
+            "@rules_clojure//:src",
+            "@rules_clojure_maven//:pin.sh",
+        ]),
     },
 )
 
