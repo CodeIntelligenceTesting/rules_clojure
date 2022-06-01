@@ -467,9 +467,8 @@
   {:pre [deps-edn-dir]}
   (->>
    (get-in basis [:bazel :ignore])
-   (map (fn [p]
-          (fs/->path deps-edn-dir p)))
-   (set)))
+   (map #(fs/->path deps-edn-dir %))
+   set))
 
 (defn strip-path
   "Given a file path relative to the deps.edn directory, return the path
@@ -633,15 +632,14 @@
   [args paths]
   (assert (map? (:src-ns->label args)))
   (->> paths
-       (mapcat (fn [path]
-                 (fs/ls-r path)))
+       (mapcat fs/ls-r)
        (map fs/dirname)
-       (distinct)
+       distinct
+       (remove #(contains? (ignore-paths args) %))
        (sort-by (comp count str))
-       (reverse)
-       (map (fn [dir]
-              (gen-dir args dir)))
-       (dorun)))
+       reverse
+       (map #(gen-dir args %))
+       dorun))
 (s/fdef gen-source-paths- :args (s/cat :a (s/keys :req-un [::deps-edn-dir ::src-ns->label ::dep-ns->label ::jar->lib ::deps-repo-tag ::deps-bazel]) :paths (s/coll-of fs/path?)))
 
 (defn basis-absolute-source-paths
@@ -677,10 +675,8 @@
   (let [ignore (ignore-paths (select-keys args [:basis :deps-edn-dir]))]
     (->>
      (:paths basis)
-     (map (fn [path]
-            (fs/->path deps-edn-dir path)))
-     (remove (fn [path]
-               (contains? ignore path))))))
+     (map #(fs/->path deps-edn-dir %))
+     (remove #(contains? ignore %)))))
 (s/fdef source-paths :args (s/cat :a (s/keys :req-un [::basis ::aliases ::deps-edn-dir])) :ret (s/coll-of fs/path?))
 
 (defn gen-source-paths
