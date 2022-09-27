@@ -702,7 +702,8 @@
   (spit (-> (fs/->path deps-build-dir "BUILD.bazel") fs/path->file)
         (str/join "\n\n" (concat
                           [(emit-bazel (list 'package (kwargs {:default_visibility ["//visibility:public"]})))
-                           (emit-bazel (list 'load "@rules_clojure//:rules.bzl" "clojure_library"))]
+                           (emit-bazel (list 'load "@rules_clojure//:rules.bzl" "clojure_library"))
+                           (emit-bazel (list 'exports_files ["deps.edn"]))]
                           (->> jar->lib
                                (sort-by (fn [[k v]] (library->label v)))
                                (mapcat (fn [[jarpath lib]]

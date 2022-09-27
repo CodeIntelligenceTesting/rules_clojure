@@ -2,9 +2,7 @@ load(":rules.bzl", "clojure_repl")
 
 package(default_visibility = ["//visibility:public"])
 
-exports_files(glob([
-    "deps.edn",
-]))
+exports_files(["deps.edn"])
 
 toolchain_type(
     name = "toolchain_type",
