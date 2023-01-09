@@ -40,7 +40,9 @@ java_binary(name="gen_srcs",
     )
 
 def _symlink_repository(repository_ctx):
-    repository_ctx.symlink(repository_ctx.os.environ["HOME"] + "/.m2/repository", repository_ctx.path("repository"))
+    maven_cache_dir = repository_ctx.os.environ["HOME"] + "/.m2/repository"
+    repository_ctx.execute(["mkdir", "-p", maven_cache_dir], quiet = False)
+    repository_ctx.symlink(maven_cache_dir, repository_ctx.path("repository"))
 
 def _run_gen_build(repository_ctx):
     maven_deps_path = repository_ctx.path(Label("@rules_clojure_maven//:pin.sh")).dirname
