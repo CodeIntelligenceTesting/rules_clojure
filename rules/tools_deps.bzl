@@ -26,7 +26,7 @@ java_binary(name="gen_srcs",
           ":deps-build-dir", "{deps_build_dir}",
           ":deps-repo-tag", "{deps_repo_tag}",
           ":aliases", "\\"{aliases}\\""],
-    data=["{deps_edn_label}"])
+    data=["@{workspace_name}{deps_edn_label}"])
 
  """.format(
             deps_repo_tag = "@" + repository_ctx.attr.name,
@@ -35,6 +35,7 @@ java_binary(name="gen_srcs",
             repository_dir = repository_ctx.path("repository"),
             deps_build_dir = repository_ctx.path(""),
             aliases = aliases_str(repository_ctx.attr.aliases),
+            workspace_name = repository_ctx.attr.deps_edn.workspace_name,
         ),
     )
 
