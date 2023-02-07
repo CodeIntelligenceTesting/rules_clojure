@@ -14,10 +14,7 @@ java_library(
 
 java_binary(
     name = "ClojureWorker",
-    jvm_flags = [
-        "-Xmx500m",
-        "-XX:MaxMetaspaceSize=500m",
-    ],
+    jvm_flags = ["-Xmx1g"],
     main_class = "rules_clojure.ClojureWorker",
     runtime_deps = [":ClojureWorker-lib"],
 )
