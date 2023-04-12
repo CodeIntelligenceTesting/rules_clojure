@@ -11,7 +11,7 @@ def rules_clojure_default_toolchain():
             maven.artifact(
                 group = "org.clojure",
                 artifact = "clojure",
-                version = "1.10.3",
+                version = "1.11.1",
                 exclusions = [
                     "org.clojure:spec.alpha",
                     "org.clojure:core.specs.alpha",
@@ -20,21 +20,21 @@ def rules_clojure_default_toolchain():
             maven.artifact(
                 group = "org.clojure",
                 artifact = "spec.alpha",
-                version = "0.2.194",
+                version = "0.3.218",
                 exclusions = ["org.clojure:clojure"],
             ),
             maven.artifact(
                 group = "org.clojure",
                 artifact = "core.specs.alpha",
-                version = "0.2.56",
+                version = "0.2.62",
                 exclusions = [
                     "org.clojure:clojure",
                     "org.clojure:spec.alpha",
                 ],
             ),
             "org.clojure:java.classpath:1.0.0",
-            "org.clojure:tools.namespace:1.1.0",
-            "org.clojure:tools.deps.alpha:0.12.1148",
+            "org.clojure:tools.namespace:1.4.4",
+            "org.clojure:tools.deps.alpha:0.15.1254",
             "com.google.code.gson:gson:2.8.7",
             "org.projectodd.shimdandy:shimdandy-api:1.2.1",
             "org.projectodd.shimdandy:shimdandy-impl:1.2.1",
