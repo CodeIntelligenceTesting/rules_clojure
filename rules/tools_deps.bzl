@@ -40,7 +40,8 @@ java_binary(name="gen_srcs",
     )
 
 def _symlink_repository(repository_ctx):
-    maven_cache_dir = repository_ctx.os.environ["HOME"] + "/.m2/repository"
+    env = repository_ctx.os.environ
+    maven_cache_dir = env.get("MAVEN_CACHE", default=env["HOME"] + "/.m2/repository")
     repository_ctx.execute(["mkdir", "-p", maven_cache_dir], quiet = False)
     repository_ctx.symlink(maven_cache_dir, repository_ctx.path("repository"))
 
